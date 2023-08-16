@@ -55,12 +55,11 @@
 #define _POP_JUMP_IF_FALSE 331
 #define _POP_JUMP_IF_TRUE 332
 #define JUMP_TO_TOP 333
+#define INSERT 334
 
-#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
-#else
-int
-_PyOpcode_num_popped(int opcode, int oparg, bool jump) {
+#ifdef NEED_OPCODE_METADATA
+int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
     switch(opcode) {
         case NOP:
             return 0;
@@ -120,17 +119,37 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case UNARY_INVERT:
             return 1;
+        case _GUARD_BOTH_INT:
+            return 2;
+        case _BINARY_OP_MULTIPLY_INT:
+            return 2;
+        case _BINARY_OP_ADD_INT:
+            return 2;
+        case _BINARY_OP_SUBTRACT_INT:
+            return 2;
         case BINARY_OP_MULTIPLY_INT:
             return 2;
         case BINARY_OP_ADD_INT:
             return 2;
         case BINARY_OP_SUBTRACT_INT:
             return 2;
+        case _GUARD_BOTH_FLOAT:
+            return 2;
+        case _BINARY_OP_MULTIPLY_FLOAT:
+            return 2;
+        case _BINARY_OP_ADD_FLOAT:
+            return 2;
+        case _BINARY_OP_SUBTRACT_FLOAT:
+            return 2;
         case BINARY_OP_MULTIPLY_FLOAT:
             return 2;
         case BINARY_OP_ADD_FLOAT:
             return 2;
         case BINARY_OP_SUBTRACT_FLOAT:
+            return 2;
+        case _GUARD_BOTH_UNICODE:
+            return 2;
+        case _BINARY_OP_ADD_UNICODE:
             return 2;
         case BINARY_OP_ADD_UNICODE:
             return 2;
@@ -143,6 +162,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case STORE_SLICE:
             return 4;
         case BINARY_SUBSCR_LIST_INT:
+            return 2;
+        case BINARY_SUBSCR_STR_INT:
             return 2;
         case BINARY_SUBSCR_TUPLE_INT:
             return 2;
@@ -226,13 +247,25 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case DELETE_GLOBAL:
             return 0;
+        case _LOAD_LOCALS:
+            return 0;
         case LOAD_LOCALS:
             return 0;
+        case _LOAD_FROM_DICT_OR_GLOBALS:
+            return 1;
         case LOAD_NAME:
             return 0;
         case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_GLOBAL:
+            return 0;
+        case _GUARD_GLOBALS_VERSION:
+            return 0;
+        case _GUARD_BUILTINS_VERSION:
+            return 0;
+        case _LOAD_GLOBAL_MODULE:
+            return 0;
+        case _LOAD_GLOBAL_BUILTINS:
             return 0;
         case LOAD_GLOBAL_MODULE:
             return 0;
@@ -271,11 +304,11 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case BUILD_CONST_KEY_MAP:
             return oparg + 1;
         case DICT_UPDATE:
-            return 1;
+            return (oparg - 1) + 2;
         case DICT_MERGE:
-            return 1;
+            return (oparg - 1) + 5;
         case MAP_ADD:
-            return 2;
+            return (oparg - 1) + 3;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
             return 3;
         case LOAD_SUPER_ATTR:
@@ -293,6 +326,12 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
         case LOAD_ATTR:
             return 1;
         case LOAD_METHOD:
+            return 1;
+        case _GUARD_TYPE_VERSION:
+            return 1;
+        case _CHECK_MANAGED_OBJECT_HAS_VALUES:
+            return 1;
+        case _LOAD_ATTR_INSTANCE_VALUE:
             return 1;
         case LOAD_ATTR_INSTANCE_VALUE:
             return 1;
@@ -348,6 +387,8 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case POP_JUMP_IF_TRUE:
             return 1;
+        case IS_NONE:
+            return 1;
         case POP_JUMP_IF_NONE:
             return 1;
         case POP_JUMP_IF_NOT_NONE:
@@ -372,9 +413,27 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 1;
         case INSTRUMENTED_FOR_ITER:
             return 0;
+        case _ITER_CHECK_LIST:
+            return 1;
+        case _IS_ITER_EXHAUSTED_LIST:
+            return 1;
+        case _ITER_NEXT_LIST:
+            return 1;
         case FOR_ITER_LIST:
             return 1;
+        case _ITER_CHECK_TUPLE:
+            return 1;
+        case _IS_ITER_EXHAUSTED_TUPLE:
+            return 1;
+        case _ITER_NEXT_TUPLE:
+            return 1;
         case FOR_ITER_TUPLE:
+            return 1;
+        case _ITER_CHECK_RANGE:
+            return 1;
+        case _IS_ITER_EXHAUSTED_RANGE:
+            return 1;
+        case _ITER_NEXT_RANGE:
             return 1;
         case FOR_ITER_RANGE:
             return 1;
@@ -494,17 +553,27 @@ _PyOpcode_num_popped(int opcode, int oparg, bool jump) {
             return 0;
         case RESERVED:
             return 0;
+        case _POP_JUMP_IF_FALSE:
+            return 1;
+        case _POP_JUMP_IF_TRUE:
+            return 1;
+        case JUMP_TO_TOP:
+            return 0;
+        case SAVE_IP:
+            return 0;
+        case EXIT_TRACE:
+            return 0;
+        case INSERT:
+            return oparg + 1;
         default:
             return -1;
     }
 }
-#endif
+#endif // NEED_OPCODE_METADATA
 
-#ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_pushed(int opcode, int oparg, bool jump);
-#else
-int
-_PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
+#ifdef NEED_OPCODE_METADATA
+int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
     switch(opcode) {
         case NOP:
             return 0;
@@ -564,17 +633,37 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 1;
         case UNARY_INVERT:
             return 1;
+        case _GUARD_BOTH_INT:
+            return 2;
+        case _BINARY_OP_MULTIPLY_INT:
+            return 1;
+        case _BINARY_OP_ADD_INT:
+            return 1;
+        case _BINARY_OP_SUBTRACT_INT:
+            return 1;
         case BINARY_OP_MULTIPLY_INT:
             return 1;
         case BINARY_OP_ADD_INT:
             return 1;
         case BINARY_OP_SUBTRACT_INT:
             return 1;
+        case _GUARD_BOTH_FLOAT:
+            return 2;
+        case _BINARY_OP_MULTIPLY_FLOAT:
+            return 1;
+        case _BINARY_OP_ADD_FLOAT:
+            return 1;
+        case _BINARY_OP_SUBTRACT_FLOAT:
+            return 1;
         case BINARY_OP_MULTIPLY_FLOAT:
             return 1;
         case BINARY_OP_ADD_FLOAT:
             return 1;
         case BINARY_OP_SUBTRACT_FLOAT:
+            return 1;
+        case _GUARD_BOTH_UNICODE:
+            return 2;
+        case _BINARY_OP_ADD_UNICODE:
             return 1;
         case BINARY_OP_ADD_UNICODE:
             return 1;
@@ -587,6 +676,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case STORE_SLICE:
             return 0;
         case BINARY_SUBSCR_LIST_INT:
+            return 1;
+        case BINARY_SUBSCR_STR_INT:
             return 1;
         case BINARY_SUBSCR_TUPLE_INT:
             return 1;
@@ -670,13 +761,25 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case DELETE_GLOBAL:
             return 0;
+        case _LOAD_LOCALS:
+            return 1;
         case LOAD_LOCALS:
+            return 1;
+        case _LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_NAME:
             return 1;
         case LOAD_FROM_DICT_OR_GLOBALS:
             return 1;
         case LOAD_GLOBAL:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case _GUARD_GLOBALS_VERSION:
+            return 0;
+        case _GUARD_BUILTINS_VERSION:
+            return 0;
+        case _LOAD_GLOBAL_MODULE:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case _LOAD_GLOBAL_BUILTINS:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_GLOBAL_MODULE:
             return (oparg & 1 ? 1 : 0) + 1;
@@ -715,11 +818,11 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case BUILD_CONST_KEY_MAP:
             return 1;
         case DICT_UPDATE:
-            return 0;
+            return (oparg - 1) + 1;
         case DICT_MERGE:
-            return 0;
+            return (oparg - 1) + 4;
         case MAP_ADD:
-            return 0;
+            return (oparg - 1) + 1;
         case INSTRUMENTED_LOAD_SUPER_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR:
@@ -731,12 +834,18 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_ZERO_SUPER_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_SUPER_ATTR_ATTR:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return 1;
         case LOAD_SUPER_ATTR_METHOD:
             return 2;
         case LOAD_ATTR:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_METHOD:
+            return ((oparg & 1) ? 1 : 0) + 1;
+        case _GUARD_TYPE_VERSION:
+            return 1;
+        case _CHECK_MANAGED_OBJECT_HAS_VALUES:
+            return 1;
+        case _LOAD_ATTR_INSTANCE_VALUE:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_INSTANCE_VALUE:
             return (oparg & 1 ? 1 : 0) + 1;
@@ -749,9 +858,9 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
         case LOAD_ATTR_CLASS:
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_PROPERTY:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return 1;
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
-            return ((oparg & 1) ? 1 : 0) + 1;
+            return 1;
         case STORE_ATTR_INSTANCE_VALUE:
             return 0;
         case STORE_ATTR_WITH_HINT:
@@ -792,6 +901,8 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case POP_JUMP_IF_TRUE:
             return 0;
+        case IS_NONE:
+            return 1;
         case POP_JUMP_IF_NONE:
             return 0;
         case POP_JUMP_IF_NOT_NONE:
@@ -816,9 +927,27 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 2;
         case INSTRUMENTED_FOR_ITER:
             return 0;
+        case _ITER_CHECK_LIST:
+            return 1;
+        case _IS_ITER_EXHAUSTED_LIST:
+            return 2;
+        case _ITER_NEXT_LIST:
+            return 2;
         case FOR_ITER_LIST:
             return 2;
+        case _ITER_CHECK_TUPLE:
+            return 1;
+        case _IS_ITER_EXHAUSTED_TUPLE:
+            return 2;
+        case _ITER_NEXT_TUPLE:
+            return 2;
         case FOR_ITER_TUPLE:
+            return 2;
+        case _ITER_CHECK_RANGE:
+            return 1;
+        case _IS_ITER_EXHAUSTED_RANGE:
+            return 2;
+        case _ITER_NEXT_RANGE:
             return 2;
         case FOR_ITER_RANGE:
             return 2;
@@ -938,11 +1067,23 @@ _PyOpcode_num_pushed(int opcode, int oparg, bool jump) {
             return 0;
         case RESERVED:
             return 0;
+        case _POP_JUMP_IF_FALSE:
+            return 0;
+        case _POP_JUMP_IF_TRUE:
+            return 0;
+        case JUMP_TO_TOP:
+            return 0;
+        case SAVE_IP:
+            return 0;
+        case EXIT_TRACE:
+            return 0;
+        case INSERT:
+            return oparg + 1;
         default:
             return -1;
     }
 }
-#endif
+#endif // NEED_OPCODE_METADATA
 
 enum InstructionFormat {
     INSTR_FMT_IB,
@@ -1000,11 +1141,8 @@ struct opcode_macro_expansion {
 #define OPCODE_UOP_NAME_SIZE 512
 #define OPCODE_MACRO_EXPANSION_SIZE 256
 
-#ifndef NEED_OPCODE_METADATA
 extern const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE];
-extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];
-extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
-#else // if NEED_OPCODE_METADATA
+#ifdef NEED_OPCODE_METADATA
 const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
@@ -1047,6 +1185,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [BINARY_SLICE] = { true, INSTR_FMT_IX, 0 },
     [STORE_SLICE] = { true, INSTR_FMT_IX, 0 },
     [BINARY_SUBSCR_LIST_INT] = { true, INSTR_FMT_IXC, 0 },
+    [BINARY_SUBSCR_STR_INT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_TUPLE_INT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC, 0 },
     [BINARY_SUBSCR_GETITEM] = { true, INSTR_FMT_IXC, 0 },
@@ -1223,6 +1362,10 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
 };
+#endif // NEED_OPCODE_METADATA
+
+extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE];
+#ifdef NEED_OPCODE_METADATA
 const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
@@ -1258,6 +1401,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [BINARY_SLICE] = { .nuops = 1, .uops = { { BINARY_SLICE, 0, 0 } } },
     [STORE_SLICE] = { .nuops = 1, .uops = { { STORE_SLICE, 0, 0 } } },
     [BINARY_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_LIST_INT, 0, 0 } } },
+    [BINARY_SUBSCR_STR_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_STR_INT, 0, 0 } } },
     [BINARY_SUBSCR_TUPLE_INT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_TUPLE_INT, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { BINARY_SUBSCR_DICT, 0, 0 } } },
     [LIST_APPEND] = { .nuops = 1, .uops = { { LIST_APPEND, 0, 0 } } },
@@ -1351,6 +1495,10 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [BINARY_OP] = { .nuops = 1, .uops = { { BINARY_OP, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { SWAP, 0, 0 } } },
 };
+#endif // NEED_OPCODE_METADATA
+
+extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
+#ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [EXIT_TRACE] = "EXIT_TRACE",
     [SAVE_IP] = "SAVE_IP",
@@ -1386,5 +1534,6 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_POP_JUMP_IF_FALSE] = "_POP_JUMP_IF_FALSE",
     [_POP_JUMP_IF_TRUE] = "_POP_JUMP_IF_TRUE",
     [JUMP_TO_TOP] = "JUMP_TO_TOP",
+    [INSERT] = "INSERT",
 };
 #endif // NEED_OPCODE_METADATA
